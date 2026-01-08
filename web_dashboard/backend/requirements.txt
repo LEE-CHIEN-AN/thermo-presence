@@ -1,0 +1,10 @@
+fastapi>=0.111.0
+uvicorn[standard]>=0.30.0
+supabase>=2.0.0
+python-dotenv>=1.0.0
+numpy>=1.24.0
+pythermalcomfort>=2.10.0
+torch>=1.9.0
+opencv-python>=4.5.0
+
+

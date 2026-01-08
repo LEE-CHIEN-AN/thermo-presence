@@ -4,6 +4,7 @@ Supabase 客戶端整合模組
 """
 
 import os
+import sys
 import json
 import pickle
 import gzip
@@ -12,8 +13,14 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime
 import numpy as np
 from supabase import create_client, Client
-from frame_processor_mlx90641 import FrameProcessorMLX90641
 from dotenv import load_dotenv
+
+# Ensure supabase_integration directory is on path for imports
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+if CURRENT_DIR not in sys.path:
+    sys.path.insert(0, CURRENT_DIR)
+
+from frame_processor_mlx90641 import FrameProcessorMLX90641
 
 # 載入 .env 檔案
 load_dotenv()
@@ -194,7 +201,8 @@ class SupabaseThermalProcessor:
         session_id: str,
         limit: int = 10,
         start_time: Optional[str] = None,
-        end_time: Optional[str] = None
+        end_time: Optional[str] = None,
+        offset: int = 0,
     ) -> List[Dict[str, Any]]:
         """
         處理多個熱像儀資料
@@ -218,7 +226,10 @@ class SupabaseThermalProcessor:
             if end_time:
                 query = query.lte('ts', end_time)
             
-            response = query.order('ts', desc=True).limit(limit).execute()
+            # Use range for basic offset-based pagination
+            start_index = max(offset, 0)
+            end_index = start_index + max(limit, 1) - 1
+            response = query.order('ts', desc=True).range(start_index, end_index).execute()
             
             if not response.data:
                 return []

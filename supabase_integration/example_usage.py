@@ -104,7 +104,7 @@ def example_get_density_map():
     if density_map is not None:
         print(f"密度圖形狀: {density_map.shape}")
         print(f"密度圖總和: {np.sum(density_map):.2f}")
-        print(f"計算出的人數: {np.sum(density_map) / 52.0:.2f}")
+        print(f"計算出的人數: {np.sum(density_map) / 51.35:.2f}")
     else:
         print("找不到資料")
 

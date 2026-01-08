@@ -167,7 +167,7 @@ class FrameProcessorMLX90641:
             model_path: 模型檔案路徑。如果為 None，會嘗試使用預設路徑
         """
         self.latest_output_frame = None
-        self.sum_of_values_for_one_person = 52
+        self.sum_of_values_for_one_person = 51.35
         
         # MLX90641 解析度
         self.INPUT_RESOLUTION = (12, 16)  # (height, width)
