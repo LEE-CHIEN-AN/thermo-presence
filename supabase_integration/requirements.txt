@@ -1,0 +1,7 @@
+# Supabase 整合所需套件
+supabase>=2.0.0
+numpy>=1.21.0
+torch>=1.9.0
+opencv-python>=4.5.0
+python-dotenv>=0.19.0
+

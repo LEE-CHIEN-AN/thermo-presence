@@ -1,0 +1,68 @@
+import React from "react";
+import { viridisColorMapSmooth } from "../utils/colormap";
+import { Colorbar } from "./Colorbar";
+
+interface ThermalImageViewerProps {
+  data: number[]; // flattened values
+  shape: [number, number]; // [rows, cols]
+}
+
+/**
+ * Thermal image viewer using viridis colormap (like IR frame visualization)
+ * Renders a grid of small divs with viridis color mapping based on temperature values.
+ * Includes a colorbar on the right side showing temperature scale.
+ */
+export const ThermalImageViewer: React.FC<ThermalImageViewerProps> = ({ data, shape }) => {
+  const [rows, cols] = shape;
+  if (!data || data.length === 0) {
+    return <div className="text-sm text-slate-400">No thermal data</div>;
+  }
+
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+
+  // Calculate optimal size to fit container without scrolling
+  // Use container width to determine image size, maintaining aspect ratio
+  const imageAspectRatio = cols / rows;
+
+  return (
+    <div className="flex items-start gap-2 w-full max-w-full overflow-hidden">
+      {/* Thermal image grid - fit to container with space for colorbar */}
+      <div
+        className="grid border border-slate-700 rounded-md overflow-hidden flex-shrink-0 gap-0"
+        style={{
+          gridTemplateRows: `repeat(${rows}, minmax(0, 1fr))`,
+          gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+          flex: "1 1 0",
+          minWidth: 0,
+          aspectRatio: `${cols} / ${rows}`,
+        }}
+      >
+        {data.map((v, idx) => {
+          const color = viridisColorMapSmooth(v, min, max);
+          return (
+            <div
+              key={idx}
+              style={{ backgroundColor: color }}
+              className="w-full h-full"
+            />
+          );
+        })}
+      </div>
+      
+      {/* Colorbar - match image height, contained within flex container */}
+      <div className="flex-shrink-0 self-stretch flex items-start overflow-visible" style={{ minWidth: "80px" }}>
+        <Colorbar
+          min={min}
+          max={max}
+          label="Temp"
+          unit="°C"
+          height={0} // Will be calculated by flex-1
+          numTicks={5}
+        />
+      </div>
+    </div>
+  );
+};
+
+
