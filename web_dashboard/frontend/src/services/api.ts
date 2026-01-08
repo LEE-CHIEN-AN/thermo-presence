@@ -1,7 +1,10 @@
 import axios from "axios";
 
+// 使用環境變數或默認值（開發環境使用相對路徑，生產環境使用完整 URL）
+const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
+
 export const api = axios.create({
-  baseURL: "/api"
+  baseURL: API_BASE_URL
 });
 
 export interface ThermalLatestResponse {

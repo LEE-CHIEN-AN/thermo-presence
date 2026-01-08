@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: thermal-presence-backend
+    env: python
+    buildCommand: cd web_dashboard/backend && pip install -r requirements.txt
+    startCommand: cd web_dashboard/backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: PYTHONPATH
+        value: /opt/render/project/src
+
