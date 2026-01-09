@@ -85,10 +85,13 @@ PYTHONPATH=/opt/render/project/src
 在 "Environment Variables" 區塊添加：
 
 ```
-VITE_API_URL=https://your-backend-url.onrender.com
+VITE_API_URL=https://your-backend-url.onrender.com/api
 ```
 
-**注意**：將 `your-backend-url.onrender.com` 替換為您在 Render 上獲得的後端 URL。
+**重要**：
+- 將 `your-backend-url.onrender.com` 替換為您在 Render 上獲得的後端 URL
+- **必須包含 `/api` 前綴**，因為後端路由都註冊在 `/api` 路徑下
+- 例如：如果後端 URL 是 `https://thermo-presence.onrender.com`，則設置為 `https://thermo-presence.onrender.com/api`
 
 ### 步驟 6: 部署
 1. 點擊 "Deploy"
@@ -137,10 +140,18 @@ VITE_API_URL=https://your-backend-url.onrender.com
 - 確認 Render 後端的 `FRONTEND_URL` 環境變數是正確的前端 URL
 - 確認前端 URL 包含 `https://` 協議
 
-### 問題 3: API 請求失敗
+### 問題 3: API 請求失敗 (404 Not Found)
+**症狀**：所有 API 請求返回 404 錯誤
+
 **解決方案**：
-- 確認前端的 `VITE_API_URL` 環境變數指向正確的後端 URL
-- 確認後端服務正在運行（檢查 Render 儀表板）
+1. **確認 `VITE_API_URL` 環境變數包含 `/api` 前綴**：
+   - ❌ 錯誤：`VITE_API_URL=https://thermo-presence.onrender.com`
+   - ✅ 正確：`VITE_API_URL=https://thermo-presence.onrender.com/api`
+2. 確認後端服務正在運行（檢查 Render 儀表板）
+3. 測試後端 API 是否正常：
+   - 訪問 `https://your-backend-url.onrender.com/api/realtime/thermal-latest?session_id=604_windowside`
+   - 應該返回 JSON 數據，而不是 404
+4. 檢查瀏覽器開發者工具的 Network 標籤，確認實際請求的 URL
 
 ### 問題 4: 模型文件找不到
 **解決方案**：
@@ -167,8 +178,10 @@ PYTHONPATH=/opt/render/project/src
 
 ### Zeabur 前端環境變數
 ```
-VITE_API_URL=https://your-backend-url.onrender.com
+VITE_API_URL=https://your-backend-url.onrender.com/api
 ```
+
+**注意**：必須包含 `/api` 前綴！
 
 ---
 
