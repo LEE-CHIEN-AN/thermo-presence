@@ -12,22 +12,22 @@ function pad2(n: number) {
   return n.toString().padStart(2, "0");
 }
 
-// format Date to datetime-local string (YYYY-MM-DDTHH:MM) in UTC
-function toUtcInputValue(d: Date) {
-  // Convert to UTC for display
-  const year = d.getUTCFullYear();
-  const month = pad2(d.getUTCMonth() + 1);
-  const day = pad2(d.getUTCDate());
-  const hours = pad2(d.getUTCHours());
-  const minutes = pad2(d.getUTCMinutes());
+// format Date to datetime-local string (YYYY-MM-DDTHH:MM) in LOCAL TIME (Taiwan UTC+8)
+function toLocalInputValue(d: Date) {
+  // Use local time for display (e.g. Taiwan UTC+8)
+  const year = d.getFullYear();
+  const month = pad2(d.getMonth() + 1);
+  const day = pad2(d.getDate());
+  const hours = pad2(d.getHours());
+  const minutes = pad2(d.getMinutes());
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
 function toUtcIso(local: string | null): string | undefined {
   if (!local) return undefined;
   // datetime-local input format: "YYYY-MM-DDTHH:mm"
-  // Treat input as UTC (append Z)
-  const d = new Date(local + "Z");
+  // Treat input as LOCAL time, convert to UTC ISO for backend
+  const d = new Date(local);
   if (Number.isNaN(d.getTime())) return undefined;
   return d.toISOString();
 }
@@ -51,8 +51,10 @@ export const History: React.FC = () => {
   // Validate time range: end time must be after start time
   const timeValidationError = (() => {
     if (!startDateTime || !endDateTime) return null;
-    const start = new Date(startDateTime + "Z");
-    const end = new Date(endDateTime + "Z");
+    // Interpret as local time for validation
+    const start = new Date(startDateTime);
+    const end = new Date(endDateTime);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return "Invalid time range";
     if (start >= end) {
       return "End time must be after start time";
     }
@@ -62,8 +64,8 @@ export const History: React.FC = () => {
   const applyPreset = (minsAgo: number) => {
     const end = new Date();
     const start = new Date(end.getTime() - minsAgo * 60 * 1000);
-    setStartDateTime(toUtcInputValue(start));
-    setEndDateTime(toUtcInputValue(end));
+    setStartDateTime(toLocalInputValue(start));
+    setEndDateTime(toLocalInputValue(end));
   };
 
   const clearRange = () => {
@@ -192,7 +194,7 @@ export const History: React.FC = () => {
             />
           </div>
           <div className="flex flex-col gap-1">
-            <span className="text-slate-400">Start time (UTC)</span>
+            <span className="text-slate-400">Start time</span>
             <input
               type="datetime-local"
               value={startDateTime}
@@ -201,7 +203,7 @@ export const History: React.FC = () => {
             />
           </div>
           <div className="flex flex-col gap-1">
-            <span className="text-slate-400">End time (UTC)</span>
+            <span className="text-slate-400">End time</span>
             <input
               type="datetime-local"
               value={endDateTime}
