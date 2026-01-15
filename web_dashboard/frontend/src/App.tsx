@@ -2,8 +2,9 @@ import React, { useState } from "react";
 import { Dashboard } from "./pages/Dashboard";
 import { History } from "./pages/History";
 import { Statistics } from "./pages/Statistics";
+import { Environment } from "./pages/Environment";
 
-type View = "realtime" | "history" | "statistics";
+type View = "realtime" | "history" | "statistics" | "environment";
 
 export const App: React.FC = () => {
   const [view, setView] = useState<View>("realtime");
@@ -45,14 +46,26 @@ export const App: React.FC = () => {
           >
             Statistics
           </button>
+          <button
+            onClick={() => setView("environment")}
+            className={`px-3 py-1 rounded-md border ${
+              view === "environment"
+                ? "bg-sky-600 border-sky-500"
+                : "bg-slate-900 border-slate-700 hover:border-slate-500"
+            }`}
+          >
+            Environment
+          </button>
         </div>
       </nav>
       {view === "realtime" ? (
         <Dashboard />
       ) : view === "history" ? (
         <History />
-      ) : (
+      ) : view === "statistics" ? (
         <Statistics />
+      ) : (
+        <Environment />
       )}
     </div>
   );

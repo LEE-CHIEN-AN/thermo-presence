@@ -12,7 +12,22 @@
 
 ## 安裝
 
-1. 安裝依賴套件：
+1. **（推薦）建立虛擬環境**：
+
+**Windows:**
+```bash
+python -m venv .venv
+.venv\Scripts\activate  # Windows PowerShell
+# 或 .venv\Scripts\activate.bat 在 CMD
+```
+
+**Linux/Mac:**
+```bash
+python -m venv .venv
+source .venv/bin/activate
+```
+
+2. 安裝依賴套件：
 
 **Windows:**
 ```bash
@@ -21,6 +36,8 @@ install.bat
 
 # 方法 2: 直接使用 pip（會顯示 PATH 警告，但不影響功能）
 pip install -r requirements.txt
+# 或使用 python -m pip 確保安裝到正確的環境
+python -m pip install -r requirements.txt
 
 # 方法 3: 抑制警告
 pip install --no-warn-script-location -r requirements.txt
@@ -34,6 +51,8 @@ chmod +x install.sh
 
 # 方法 2: 直接使用 pip
 pip install -r requirements.txt
+# 或使用 python -m pip 確保安裝到正確的環境
+python -m pip install -r requirements.txt
 
 # 方法 3: 抑制警告
 pip install --no-warn-script-location -r requirements.txt
@@ -44,7 +63,7 @@ pip install --no-warn-script-location -r requirements.txt
 - 使用 `--no-warn-script-location` 參數抑制警告
 - 將 `C:\Users\a0903\AppData\Roaming\Python\Python313\Scripts` 添加到系統 PATH
 
-2. 確保已安裝 PyTorch（如果尚未安裝）：
+3. 確保已安裝 PyTorch（如果尚未安裝）：
 
 ```bash
 pip install torch
