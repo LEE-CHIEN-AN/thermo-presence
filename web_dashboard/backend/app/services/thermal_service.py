@@ -277,8 +277,19 @@ class ThermalService:
         Fetch a specific thermal frame by its id and run people detection.
         Automatically saves results to people_count_results table if not already saved.
         """
-        result = self._processor.process_frame_by_id(frame_id)
-        if not result:
+        try:
+            result = self._processor.process_frame_by_id(frame_id)
+            if not result:
+                return None
+        except RuntimeError as e:
+            # Supabase 連接錯誤
+            print(f"錯誤: 無法從 Supabase 獲取 frame {frame_id}: {e}")
+            return None
+        except Exception as e:
+            # 其他未預期的錯誤
+            print(f"錯誤: 處理熱影像資料時發生未預期的錯誤: {e}")
+            import traceback
+            traceback.print_exc()
             return None
 
         density_map = self._processor.frame_processor.get_density_map()
