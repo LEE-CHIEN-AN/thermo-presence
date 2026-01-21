@@ -167,13 +167,30 @@ class ThermalService:
         Fetch latest thermal frame for a session and run people detection.
         Automatically saves results to people_count_results table if not already saved.
         """
-        result = self._processor.process_latest_frame(session_id=session_id, limit=1)
-        if not result:
-            return None
+        try:
+            result = self._processor.process_latest_frame(session_id=session_id, limit=1)
+            if not result:
+                return None
 
-        # Re-run processing to obtain density map and raw thermal data for this frame
-        detail = self._processor.process_frame_by_id(result["id"])
-        if not detail:
+            # Re-run processing to obtain density map and raw thermal data for this frame
+            try:
+                detail = self._processor.process_frame_by_id(result["id"])
+            except RuntimeError as e:
+                # Supabase 連接錯誤，記錄但繼續使用已獲取的結果
+                print(f"警告: 無法重新處理 frame {result['id']}，使用已獲取的結果: {e}")
+                detail = result  # 使用已獲取的結果
+            
+            if not detail:
+                return None
+        except RuntimeError as e:
+            # Supabase 連接錯誤
+            print(f"錯誤: 無法從 Supabase 獲取資料: {e}")
+            return None
+        except Exception as e:
+            # 其他未預期的錯誤
+            print(f"錯誤: 處理熱影像資料時發生未預期的錯誤: {e}")
+            import traceback
+            traceback.print_exc()
             return None
 
         density_map = self._processor.frame_processor.get_density_map()
@@ -227,19 +244,33 @@ class ThermalService:
         }
 
     def _get_raw_thermal_data(self, frame_id: int) -> Optional[np.ndarray]:
-        """Get raw thermal frame data from Supabase"""
-        try:
-            response = self._processor.supabase.table('thermal_frames')\
-                .select('data')\
-                .eq('id', frame_id)\
-                .execute()
-            
-            if not response.data or len(response.data) == 0:
+        """Get raw thermal frame data from Supabase with retry mechanism"""
+        import time
+        import httpx
+        
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                response = self._processor.supabase.table('thermal_frames')\
+                    .select('data')\
+                    .eq('id', frame_id)\
+                    .execute()
+                
+                if not response.data or len(response.data) == 0:
+                    return None
+                
+                return self._processor.parse_data_array(response.data[0]['data'])
+            except (httpx.ReadError, httpx.RemoteProtocolError, httpx.ConnectError, httpx.TimeoutException) as e:
+                if attempt < max_retries - 1:
+                    time.sleep(1.0 * (attempt + 1))  # 指數退避
+                    continue
+                else:
+                    print(f"警告: 無法獲取 raw thermal data (frame_id={frame_id})，已重試 {max_retries} 次: {e}")
+                    return None
+            except Exception as e:
+                print(f"警告: 獲取 raw thermal data 時發生錯誤: {e}")
                 return None
-            
-            return self._processor.parse_data_array(response.data[0]['data'])
-        except Exception:
-            return None
+        return None
 
     def get_frame_by_id(self, frame_id: int) -> Optional[Dict[str, Any]]:
         """
