@@ -67,6 +67,20 @@ SUPABASE_URL=...
 SUPABASE_KEY=...
 ```
 
+**For production deployment (Render/Zeabur):**
+
+If deploying the frontend separately, you may need to set environment variables:
+
+```env
+FRONTEND_URL=https://your-frontend-domain.com  # Optional, defaults to localhost:5173
+ZEABUR_URL=https://your-zeabur-domain.com       # Optional, for Zeabur deployments
+```
+
+The backend CORS configuration automatically allows:
+- `http://localhost:5173` (development)
+- `https://604thermalcamera.zeabur.app` (production frontend)
+- Any URL set via `FRONTEND_URL` or `ZEABUR_URL` environment variables
+
 Then start FastAPI:
 
 ```bash
