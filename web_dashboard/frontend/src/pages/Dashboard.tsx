@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { fetchLatestThermal, ThermalLatestResponse, fetchPmvPpdHeatmaps, PmvPpdHeatmapsResponse } from "../services/api";
 import { ThermalImageViewer } from "../components/ThermalImageViewer";
 import { DensityMapViewer } from "../components/DensityMapViewer";
+import { YOLODetectionViewer } from "../components/YOLODetectionViewer";
 
 export const Dashboard: React.FC = () => {
   const [sessionId, setSessionId] = useState("604_windowside");
@@ -53,10 +54,39 @@ export const Dashboard: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col gap-6 px-4 py-6 md:px-8 bg-black">
       {/* Top: Predicted people count (like example image) */}
-      <header className="flex flex-col gap-4 items-center text-center">
+      <header className="flex flex-col gap-2 items-center text-center">
         <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">
           Predicted people count: {predictedCount}
         </h1>
+        {/* Details moved here in small text */}
+        <div className="text-xs text-slate-400 flex flex-col items-center gap-1">
+          <div>
+            Frame ID: {data?.frame_id ?? "-"}
+          </div>
+          {data && (
+            <div>
+              Raw count: {data.people_count.toFixed(2)}
+            </div>
+          )}
+          <div className="text-[11px] text-slate-500">
+            {data
+              ? (() => {
+                  // Parse ISO string and display in UTC (no timezone conversion)
+                  const date = new Date(data.timestamp);
+                  // Format as UTC time to avoid timezone offset
+                  const year = date.getUTCFullYear();
+                  const month = date.getUTCMonth() + 1;
+                  const day = date.getUTCDate();
+                  const hour = date.getUTCHours();
+                  const minute = date.getUTCMinutes().toString().padStart(2, "0");
+                  const second = date.getUTCSeconds().toString().padStart(2, "0");
+                  const ampm = hour >= 12 ? "PM" : "AM";
+                  const hour12 = hour % 12 || 12;
+                  return `${month}/${day}/${year}, ${hour12}:${minute}:${second} ${ampm}`;
+                })()
+              : "No timestamp"}
+          </div>
+        </div>
         <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-slate-400">
           <span>Session ID:</span>
           <input
@@ -79,8 +109,8 @@ export const Dashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Main row: IR frame | Network output | People count info */}
-      <main className="grid gap-4 md:grid-cols-[2fr_2fr_1fr] items-start">
+      {/* Main row: IR frame | Network output | YOLO */}
+      <main className="grid gap-4 md:grid-cols-[2fr_2fr_2fr] items-start">
         {/* IR frame */}
         <section className="space-y-2 min-w-0">
           <h2 className="text-lg font-semibold text-center">IR frame</h2>
@@ -115,39 +145,27 @@ export const Dashboard: React.FC = () => {
           </div>
         </section>
 
-        {/* People count details - smaller */}
-        <section className="space-y-2">
-          <h2 className="text-base font-semibold text-center">Details</h2>
-          <div className="rounded-lg bg-slate-900 p-3 flex flex-col items-center justify-center gap-2">
-            <div className="text-xs text-slate-400">
-              Frame ID: {data?.frame_id ?? "-"}
-            </div>
-            <div className="text-3xl font-bold">
-              {data?.people_count_rounded ?? "-"}
-            </div>
-            {data && (
-              <div className="text-xs text-slate-400">
-                ({data.people_count.toFixed(2)})
+        {/* YOLO detection */}
+        <section className="space-y-2 min-w-0">
+          <h2 className="text-lg font-semibold text-center">
+            YOLO ({data?.yolo_detection?.people_count ?? "-"})
+          </h2>
+          <div className="rounded-lg bg-slate-900 p-2 flex items-center justify-center overflow-hidden">
+            {data?.yolo_thermal_image && data?.yolo_detection ? (
+              <YOLODetectionViewer
+                thermalData={data.yolo_thermal_image.data}
+                thermalShape={data.yolo_thermal_image.shape}
+                yoloDetection={data.yolo_detection}
+              />
+            ) : data?.thermal_image ? (
+              <div className="text-sm text-slate-500 text-center py-8">
+                YOLO detection not available
+              </div>
+            ) : (
+              <div className="text-sm text-slate-500 text-center py-8">
+                No thermal image data
               </div>
             )}
-            <div className="text-xs text-slate-500 text-center">
-              {data
-                ? (() => {
-                    // Parse ISO string and display in UTC (no timezone conversion)
-                    const date = new Date(data.timestamp);
-                    // Format as UTC time to avoid timezone offset
-                    const year = date.getUTCFullYear();
-                    const month = date.getUTCMonth() + 1;
-                    const day = date.getUTCDate();
-                    const hour = date.getUTCHours();
-                    const minute = date.getUTCMinutes().toString().padStart(2, "0");
-                    const second = date.getUTCSeconds().toString().padStart(2, "0");
-                    const ampm = hour >= 12 ? "PM" : "AM";
-                    const hour12 = hour % 12 || 12;
-                    return `${month}/${day}/${year}, ${hour12}:${minute}:${second} ${ampm}`;
-                  })()
-                : "No timestamp"}
-            </div>
           </div>
         </section>
       </main>

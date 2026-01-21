@@ -7,6 +7,17 @@ export const api = axios.create({
   baseURL: API_BASE_URL
 });
 
+export interface YOLODetection {
+  people_count: number;
+  boxes: Array<{
+    x_center: number;
+    y_center: number;
+    width: number;
+    height: number;
+    confidence: number;
+  }>;
+}
+
 export interface ThermalLatestResponse {
   frame_id: number;
   session_id: string;
@@ -21,6 +32,11 @@ export interface ThermalLatestResponse {
     data: number[];
     shape: [number, number];
   } | null;
+  yolo_detection: YOLODetection | null;
+  yolo_thermal_image: {
+    data: number[];
+    shape: [number, number];
+  } | null; // Upsampled 192×256 thermal image for YOLO visualization
 }
 
 export interface HistoryFrameSummary {
