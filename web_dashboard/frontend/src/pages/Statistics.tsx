@@ -92,16 +92,22 @@ export const Statistics: React.FC = () => {
 
   // Prepare trend chart data
   const trendChartData = trendData
-    ? trendData.points.map((point) => ({
-        time: new Date(point.time).toLocaleString("zh-TW", {
-          month: "short",
-          day: "numeric",
-          hour: interval === "hour" ? "numeric" : undefined,
-        }),
-        avg: point.avg_people,
-        max: point.max_people,
-        min: point.min_people,
-      }))
+    ? trendData.points.map((point) => {
+        const date = new Date(point.time);
+        // Format as UTC time to avoid timezone offset
+        let timeStr = "";
+        if (interval === "hour") {
+          timeStr = `${date.getUTCMonth() + 1}/${date.getUTCDate()} ${date.getUTCHours()}:00`;
+        } else {
+          timeStr = `${date.getUTCMonth() + 1}/${date.getUTCDate()}`;
+        }
+        return {
+          time: timeStr,
+          avg: point.avg_people,
+          max: point.max_people,
+          min: point.min_people,
+        };
+      })
     : [];
 
   return (

@@ -1,6 +1,7 @@
 import React from "react";
 import { viridisColorMapSmooth } from "../utils/colormap";
 import { Colorbar } from "./Colorbar";
+import { RoomLayoutOverlay } from "./RoomLayoutOverlay";
 
 interface DensityMapViewerProps {
   data: number[]; // flattened values
@@ -29,13 +30,14 @@ export const DensityMapViewer: React.FC<DensityMapViewerProps> = ({ data, shape 
     <div className="flex items-start gap-2 w-full max-w-full overflow-hidden">
       {/* Density map grid - fit to container with space for colorbar */}
       <div
-        className="grid border border-slate-700 rounded-md overflow-hidden flex-shrink-0 gap-0"
+        className="grid border border-slate-700 rounded-md overflow-hidden flex-shrink-0 gap-0 relative"
         style={{
-          gridTemplateRows: `repeat(${rows}, minmax(0, 1fr))`,
+          gridTemplateRows: `repeat(${rows}, minmax(0, 1fr))`, //
           gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
           flex: "1 1 0",
-          minWidth: 0,
+          minWidth: 0, // 最小寬度
           aspectRatio: `${cols} / ${rows}`,
+          transform: "scaleX(-1)", // 水平翻轉（左右翻轉）
         }}
       >
         {data.map((v, idx) => {
@@ -48,6 +50,8 @@ export const DensityMapViewer: React.FC<DensityMapViewerProps> = ({ data, shape 
             />
           );
         })}
+        {/* Overlay room layout on top of the grid (inherits the same transform) */}
+        <RoomLayoutOverlay cols={cols} rows={rows} />
       </div>
       
       {/* Colorbar - match image height, contained within flex container */}

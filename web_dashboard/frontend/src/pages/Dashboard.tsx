@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { fetchLatestThermal, ThermalLatestResponse } from "../services/api";
+import { fetchLatestThermal, ThermalLatestResponse, fetchPmvPpdHeatmaps, PmvPpdHeatmapsResponse } from "../services/api";
 import { ThermalImageViewer } from "../components/ThermalImageViewer";
 import { DensityMapViewer } from "../components/DensityMapViewer";
 
 export const Dashboard: React.FC = () => {
   const [sessionId, setSessionId] = useState("604_windowside");
   const [data, setData] = useState<ThermalLatestResponse | null>(null);
+  const [heatmaps, setHeatmaps] = useState<PmvPpdHeatmapsResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingHeatmaps, setLoadingHeatmaps] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const load = async () => {
@@ -23,9 +25,25 @@ export const Dashboard: React.FC = () => {
     }
   };
 
+  const loadHeatmaps = async () => {
+    try {
+      setLoadingHeatmaps(true);
+      const res = await fetchPmvPpdHeatmaps();
+      setHeatmaps(res);
+    } catch (e: any) {
+      console.error("Failed to load PMV/PPD heatmaps", e);
+    } finally {
+      setLoadingHeatmaps(false);
+    }
+  };
+
   useEffect(() => {
     load();
-    const id = setInterval(load, 10_000);
+    loadHeatmaps();
+    const id = setInterval(() => {
+      load();
+      loadHeatmaps();
+    }, 10_000);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId]);
@@ -133,6 +151,73 @@ export const Dashboard: React.FC = () => {
           </div>
         </section>
       </main>
+
+      {/* PMV/PPD Heatmaps Section */}
+      <section className="space-y-4">
+        <h2 className="text-xl font-semibold text-center">教室即時 PMV / PPD 熱力圖</h2>
+        
+        {loadingHeatmaps && (
+          <div className="text-sm text-slate-400 text-center py-4">載入熱力圖中...</div>
+        )}
+
+        {heatmaps && (
+          <div className="grid gap-4 md:grid-cols-2">
+            {/* PMV Heatmap */}
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold text-center">PMV 熱力圖</h3>
+              <div className="rounded-lg bg-slate-900 p-2 flex items-center justify-center overflow-hidden">
+                <img
+                  src={`data:image/png;base64,${heatmaps.pmv_image}`}
+                  alt="PMV Heatmap"
+                  className="max-w-full h-auto"
+                />
+              </div>
+              <div className="text-xs text-slate-400 text-center px-2">
+                預測平均表決 (Predicted Mean Vote，PMV)，是由丹麥學者P.O. Fanger教授於1972年所發表人體熱平衡模型，該模型用來表示人體對於環境中冷、熱的感受。
+              </div>
+            </div>
+
+            {/* PPD Heatmap */}
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold text-center">PPD 熱力圖</h3>
+              <div className="rounded-lg bg-slate-900 p-2 flex items-center justify-center overflow-hidden">
+                <img
+                  src={`data:image/png;base64,${heatmaps.ppd_image}`}
+                  alt="PPD Heatmap"
+                  className="max-w-full h-auto"
+                />
+              </div>
+              <div className="text-xs text-slate-400 text-center px-2">
+                預測不滿意百分率(Predicted Percentage of Dissatisfied, PPD)，表示在該PMV舒適指標中，空間內有多少百分比的人感到不舒適。為了確保符合已知標準（ASHRAE 55 和 ISO 7730）的熱舒適度，空間內所有佔用區域的 PPD 值應保持在 20% 以下。
+              </div>
+            </div>
+          </div>
+        )}
+
+        {heatmaps?.timestamp && (
+          <div className="text-xs text-slate-500 text-center">
+            資料時間：{(() => {
+              // Parse UTC timestamp and convert to local time (UTC+8)
+              const date = new Date(heatmaps.timestamp);
+              // Add 8 hours for UTC+8 timezone
+              const localTime = new Date(date.getTime() + 8 * 60 * 60 * 1000);
+              const year = localTime.getUTCFullYear();
+              const month = localTime.getUTCMonth() + 1;
+              const day = localTime.getUTCDate();
+              const hour = localTime.getUTCHours();
+              const minute = localTime.getUTCMinutes().toString().padStart(2, "0");
+              const second = localTime.getUTCSeconds().toString().padStart(2, "0");
+              return `${year}/${month}/${day} ${hour}:${minute}:${second}`;
+            })()}
+          </div>
+        )}
+
+        {!heatmaps && !loadingHeatmaps && (
+          <div className="text-sm text-slate-500 text-center py-8">
+            無法載入 PMV/PPD 熱力圖
+          </div>
+        )}
+      </section>
 
       {loading && (
         <div className="fixed bottom-4 right-4 text-xs text-slate-400">

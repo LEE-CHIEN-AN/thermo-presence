@@ -18,11 +18,15 @@ app = FastAPI(
 )
 
 
-# CORS configuration – for local development, allow everything.
-# In production you should restrict origins to your frontend domain.
+# CORS configuration
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        FRONTEND_URL,
+        "http://localhost:5173",  # 開發環境
+        os.getenv("ZEABUR_URL", ""),  # Zeabur 前端 URL（如果設置）
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
