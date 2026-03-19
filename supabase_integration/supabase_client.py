@@ -9,11 +9,13 @@ import json
 import pickle
 import gzip
 import base64
+import time
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 import numpy as np
 from supabase import create_client, Client
 from dotenv import load_dotenv
+import httpx
 
 # Ensure supabase_integration directory is on path for imports
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -24,6 +26,36 @@ from frame_processor_mlx90641 import FrameProcessorMLX90641
 
 # 載入 .env 檔案
 load_dotenv()
+
+
+def retry_supabase_query(max_retries: int = 3, delay: float = 1.0):
+    """
+    重試裝飾器，用於處理 Supabase 連接錯誤
+    
+    Args:
+        max_retries: 最大重試次數
+        delay: 重試延遲（秒）
+    """
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            last_exception = None
+            for attempt in range(max_retries):
+                try:
+                    return func(*args, **kwargs)
+                except (httpx.ReadError, httpx.RemoteProtocolError, httpx.ConnectError, httpx.TimeoutException) as e:
+                    last_exception = e
+                    if attempt < max_retries - 1:
+                        time.sleep(delay * (attempt + 1))  # 指數退避
+                        continue
+                    else:
+                        raise RuntimeError(f"Supabase 連接失敗（已重試 {max_retries} 次）: {e}")
+                except Exception as e:
+                    # 非連接錯誤，直接拋出
+                    raise
+            if last_exception:
+                raise last_exception
+        return wrapper
+    return decorator
 
 
 class SupabaseThermalProcessor:
@@ -98,6 +130,7 @@ class SupabaseThermalProcessor:
         except Exception as e:
             raise ValueError(f"解析資料時發生錯誤: {e}")
     
+    @retry_supabase_query(max_retries=3, delay=1.0)
     def process_latest_frame(
         self,
         session_id: str,
@@ -149,9 +182,13 @@ class SupabaseThermalProcessor:
             
             return results[0] if limit == 1 else results
         
+        except RuntimeError:
+            # 重試裝飾器已經處理了連接錯誤，直接重新拋出
+            raise
         except Exception as e:
             raise RuntimeError(f"處理 Supabase 資料時發生錯誤: {e}")
     
+    @retry_supabase_query(max_retries=3, delay=1.0)
     def process_frame_by_id(self, frame_id: int) -> Optional[Dict[str, Any]]:
         """
         根據 ID 處理特定的熱像儀資料
@@ -193,6 +230,9 @@ class SupabaseThermalProcessor:
                 'raw_data_length': len(data_array)
             }
         
+        except RuntimeError:
+            # 重試裝飾器已經處理了連接錯誤，直接重新拋出
+            raise
         except Exception as e:
             raise RuntimeError(f"處理 Supabase 資料時發生錯誤: {e}")
     

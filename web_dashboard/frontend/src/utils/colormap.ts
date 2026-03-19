@@ -77,3 +77,4 @@ export function viridisColorMapSmooth(value: number, min: number, max: number): 
   return `rgb(${r}, ${g}, ${b})`;
 }
 
+

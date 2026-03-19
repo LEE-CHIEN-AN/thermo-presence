@@ -20,13 +20,25 @@ app = FastAPI(
 
 # CORS configuration
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+ZEABUR_URL = os.getenv("ZEABUR_URL", "")
+
+# 收集所有允許的來源，過濾掉空字串
+allowed_origins = [
+    FRONTEND_URL,
+    "http://localhost:5173",  # 開發環境
+    "https://604thermalcamera.zeabur.app",  # Zeabur 前端部署 URL
+]
+
+# 如果環境變數有設定，也加入
+if ZEABUR_URL:
+    allowed_origins.append(ZEABUR_URL)
+
+# 過濾掉空字串
+allowed_origins = [origin for origin in allowed_origins if origin]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        FRONTEND_URL,
-        "http://localhost:5173",  # 開發環境
-        os.getenv("ZEABUR_URL", ""),  # Zeabur 前端 URL（如果設置）
-    ],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -1,0 +1,13 @@
+# YOLO 資料集配置
+# 使用相對於此檔案的相對路徑
+path: dataset
+train: images/train
+val: images/val
+test: images/test
+
+# 類別名稱
+names:
+  0: person
+
+# 類別數量
+nc: 1

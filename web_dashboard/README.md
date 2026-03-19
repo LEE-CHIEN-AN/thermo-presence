@@ -67,6 +67,20 @@ SUPABASE_URL=...
 SUPABASE_KEY=...
 ```
 
+**For production deployment (Render/Zeabur):**
+
+If deploying the frontend separately, you may need to set environment variables:
+
+```env
+FRONTEND_URL=https://your-frontend-domain.com  # Optional, defaults to localhost:5173
+ZEABUR_URL=https://your-zeabur-domain.com       # Optional, for Zeabur deployments
+```
+
+The backend CORS configuration automatically allows:
+- `http://localhost:5173` (development)
+- `https://604thermalcamera.zeabur.app` (production frontend)
+- Any URL set via `FRONTEND_URL` or `ZEABUR_URL` environment variables
+
 Then start FastAPI:
 
 ```bash
@@ -79,11 +93,17 @@ The API root will be available at:
 - `http://127.0.0.1:8000/`
 - `http://127.0.0.1:8000/docs` (Swagger UI)
 
-Key endpoints for the first phase (thermal only):
+Key endpoints:
 
-- `GET /api/realtime/thermal-latest?session_id=604_windowside`
-- `GET /api/realtime/thermal-by-id?frame_id=123`
-- `GET /api/history/thermal?session_id=604_windowside&limit=100`
+- `GET /api/realtime/thermal-latest?session_id=604_windowside` - Latest thermal frame with U-Net and YOLO detection
+- `GET /api/realtime/thermal-by-id?frame_id=123` - Specific thermal frame by ID
+- `GET /api/history/thermal?session_id=604_windowside&limit=100` - Historical thermal frames
+- `GET /api/realtime/pmv-ppd-heatmaps` - PMV/PPD heatmaps
+
+**YOLO Detection**: The backend automatically runs YOLO detection on thermal images if:
+- `ultralytics` package is installed
+- YOLO model weights exist at `yolo_training/runs/train/weights/best.pt` or `last.pt`
+- Returns `yolo_detection` (bounding boxes) and `yolo_thermal_image` (192×256 upsampled image) in the API response
 
 ---
 
@@ -107,10 +127,13 @@ web_dashboard/
       services/
         api.ts              # Axios client for backend APIs
       components/
-        ThermalImageViewer.tsx
-        DensityMapViewer.tsx
+        ThermalImageViewer.tsx      # IR frame visualization
+        DensityMapViewer.tsx        # U-Net density map visualization
+        YOLODetectionViewer.tsx    # YOLO detection with bounding boxes
+        Colorbar.tsx               # Color scale legend
+        RoomLayoutOverlay.tsx      # Room layout overlay
       pages/
-        Dashboard.tsx       # Realtime people count + density map
+        Dashboard.tsx               # Realtime people count + IR frame + density map + YOLO
 ```
 
 ### 2.2. Setup & run
@@ -137,20 +160,37 @@ On the `Dashboard` page (`/`):
 - Every 10 seconds it calls `GET /api/realtime/thermal-latest` to fetch:
   - `frame_id`, `timestamp`
   - `people_count` (float) and `people_count_rounded` (int)
-  - a 24×32 **density map**
-- **Left**: density map rendered as a colored grid (`DensityMapViewer`)
-- **Right**: people count card (big integer, small float value, timestamp)
-- A placeholder block for the thermal raw frame (to be wired once a raw-frame API is added)
+  - a 24×32 **thermal image** (IR frame)
+  - a 24×32 **density map** (Network output)
+  - YOLO detection results with bounding boxes (if YOLO model is available)
+- **Top**: Predicted people count with frame details (Frame ID, raw count, timestamp)
+- **Main panels** (3 columns):
+  - **Left**: IR frame (24×32 thermal image with viridis colormap)
+  - **Middle**: Network output (24×32 density map from U-Net)
+  - **Right**: YOLO detection (192×256 upsampled thermal image with YOLO bounding boxes overlay)
+- **Bottom**: PMV/PPD heatmaps (if available)
 
 ---
 
-## 3. Next steps
+## 3. YOLO Integration
 
-Planned future work (as per the high-level plan):
+The dashboard now includes YOLO-based people detection alongside the existing U-Net density estimation:
 
-- Add a raw thermal frame API and connect it to a proper `ThermalImageViewer`
+- **Backend**: `thermal_service.py` automatically runs YOLO detection on thermal images
+- **Frontend**: `YOLODetectionViewer` component displays upsampled thermal images (192×256) with YOLO bounding boxes
+- **Requirements**: 
+  - `ultralytics>=8.0.0` must be installed in the backend virtual environment
+  - YOLO model weights must exist at `yolo_training/runs/train/weights/best.pt` or `last.pt`
+- **Visualization**: YOLO panel shows the same thermal image as IR frame but upsampled to match YOLO's detection resolution (192×256)
+
+## 4. Next steps
+
+Planned future work:
+
 - Add environment sensor integration from `wiolink` table (CO₂, TVOC, PM, light, window state)
 - Add IAQI / PMV / PPD badges and long-term trend charts (Recharts)
 - Add heatmaps (temperature, humidity, PMV, PPD) over the classroom floor plan
+- Compare U-Net vs YOLO detection accuracy metrics
+
 
 

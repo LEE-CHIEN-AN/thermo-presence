@@ -12,7 +12,22 @@
 
 ## 安裝
 
-1. 安裝依賴套件：
+1. **（推薦）建立虛擬環境**：
+
+**Windows:**
+```bash
+python -m venv .venv
+.venv\Scripts\activate  # Windows PowerShell
+# 或 .venv\Scripts\activate.bat 在 CMD
+```
+
+**Linux/Mac:**
+```bash
+python -m venv .venv
+source .venv/bin/activate
+```
+
+2. 安裝依賴套件：
 
 **Windows:**
 ```bash
@@ -21,6 +36,8 @@ install.bat
 
 # 方法 2: 直接使用 pip（會顯示 PATH 警告，但不影響功能）
 pip install -r requirements.txt
+# 或使用 python -m pip 確保安裝到正確的環境
+python -m pip install -r requirements.txt
 
 # 方法 3: 抑制警告
 pip install --no-warn-script-location -r requirements.txt
@@ -34,6 +51,8 @@ chmod +x install.sh
 
 # 方法 2: 直接使用 pip
 pip install -r requirements.txt
+# 或使用 python -m pip 確保安裝到正確的環境
+python -m pip install -r requirements.txt
 
 # 方法 3: 抑制警告
 pip install --no-warn-script-location -r requirements.txt
@@ -44,7 +63,7 @@ pip install --no-warn-script-location -r requirements.txt
 - 使用 `--no-warn-script-location` 參數抑制警告
 - 將 `C:\Users\a0903\AppData\Roaming\Python\Python313\Scripts` 添加到系統 PATH
 
-2. 確保已安裝 PyTorch（如果尚未安裝）：
+3. 確保已安裝 PyTorch（如果尚未安裝）：
 
 ```bash
 pip install torch
@@ -123,7 +142,36 @@ python main.py \
     --save-density-map
 ```
 
-### 方法 3: 批次處理所有資料
+### 方法 3: YOLO 即時偵測測試
+
+使用 `test_yolo_realtime.py` 腳本測試 YOLO 模型對 Supabase 即時資料的偵測效果：
+
+```bash
+# 測試最新一筆資料並視覺化
+python test_yolo_realtime.py --session-id 604_windowside --limit 1 --visualize
+
+# 測試指定 frame_id
+python test_yolo_realtime.py --frame-id 244560 --visualize
+
+# 調整 YOLO 參數
+python test_yolo_realtime.py --session-id 604_windowside --conf 0.5 --iou 0.5 --max-det 20 --visualize
+
+# 儲存視覺化結果
+python test_yolo_realtime.py --session-id 604_windowside --visualize --save-images --output-dir output_images
+```
+
+**功能：**
+- 從 Supabase 讀取熱影像資料
+- 使用訓練好的 YOLO 模型進行人數偵測
+- 與 U-Net 結果對比
+- 視覺化顯示 YOLO bounding boxes 和 U-Net 密度圖
+- 可選：將 YOLO 結果寫回 Supabase
+
+**需求：**
+- YOLO 模型權重檔案：`yolo_training/runs/train/weights/best.pt` 或 `last.pt`
+- `ultralytics` 套件已安裝
+
+### 方法 4: 批次處理所有資料
 
 使用 `batch_process_all.py` 一次性處理所有 `thermal_frames` 資料：
 
